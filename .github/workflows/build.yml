@@ -17,12 +17,8 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
     
-    - name: Setup Gradle
-      uses: gradle/gradle-build-action@v2
-    
     - name: Create project structure
       run: |
-        # Создаем структуру папок
         mkdir -p src/main/java/com/example/dupe
         mkdir -p src/main/resources/META-INF
         mkdir -p gradle/wrapper
@@ -86,13 +82,13 @@ EOF
     
     - name: Build with Gradle
       run: |
-        # Создаем временный gradlew скрипт
-        cat > gradlew << 'EOF'
-#!/bin/sh
-exec gradle "$@"
-EOF
-        chmod +x gradlew
-        ./gradlew build
+        # Устанавливаем Gradle
+        wget https://services.gradle.org/distributions/gradle-8.1.1-bin.zip
+        unzip gradle-8.1.1-bin.zip
+        export PATH=$PWD/gradle-8.1.1/bin:$PATH
+        
+        # Собираем мод
+        gradle build
     
     - name: Upload artifact
       uses: actions/upload-artifact@v3
