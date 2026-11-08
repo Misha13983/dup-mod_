@@ -1,0 +1,101 @@
+name: Build Mod
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up JDK 17
+      uses: actions/setup-java@v3
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+    
+    - name: Setup Gradle
+      uses: gradle/gradle-build-action@v2
+    
+    - name: Create project structure
+      run: |
+        # Создаем структуру папок
+        mkdir -p src/main/java/com/example/dupe
+        mkdir -p src/main/resources/META-INF
+        mkdir -p gradle/wrapper
+        
+        # Копируем основной код
+        cp DupeMod.java src/main/java/com/example/dupe/
+        
+        # Создаем pack.mcmeta
+        cat > src/main/resources/pack.mcmeta << 'EOF'
+{
+  "pack": {
+    "description": "Dupe Mod",
+    "pack_format": 15
+  }
+}
+EOF
+        
+        # Создаем mods.toml
+        cat > src/main/resources/META-INF/mods.toml << 'EOF'
+modLoader="javafml"
+loaderVersion="[47,)"
+license="MIT"
+
+[[mods]]
+modId="dupe_mod"
+version="1.0.0"
+displayName="Dupe Mod"
+description="Dupe Mod for Spooky Time servers"
+authors="You"
+
+[[dependencies.dupe_mod]]
+modId="forge"
+mandatory=true
+versionRange="[47,)"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.dupe_mod]]
+modId="minecraft"
+mandatory=true
+versionRange="[1.20.1]"
+ordering="NONE"
+side="BOTH"
+EOF
+        
+        # Создаем gradle.properties
+        cat > gradle.properties << 'EOF'
+org.gradle.jvmargs=-Xmx2G
+org.gradle.daemon=false
+EOF
+        
+        # Создаем settings.gradle
+        cat > settings.gradle << 'EOF'
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        maven { url = 'https://maven.minecraftforge.net' }
+    }
+}
+EOF
+    
+    - name: Build with Gradle
+      run: |
+        # Создаем временный gradlew скрипт
+        cat > gradlew << 'EOF'
+#!/bin/sh
+exec gradle "$@"
+EOF
+        chmod +x gradlew
+        ./gradlew build
+    
+    - name: Upload artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: dupe-mod
+        path: build/libs/*.jar
